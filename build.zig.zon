@@ -1,0 +1,21 @@
+.{
+    .name = .tinybird,
+    .version = "0.1.0",
+    .fingerprint = 0x14d5d4b3f441255f,
+    .minimum_zig_version = "0.17.0",
+    .dependencies = .{
+        .microzig = .{
+            .url = "https://github.com/ZigEmbeddedGroup/microzig/releases/download/0.17.20/microzig.tar.gz",
+            .hash = "microzig-0.17.20-D20YSSHGAAAptXz5bsaHh95mKb-Q27LiRES8ADS_TQjC",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "tests",
+        "examples",
+        "LICENSE",
+        "README.md",
+    },
+}
