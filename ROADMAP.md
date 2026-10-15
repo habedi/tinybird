@@ -37,6 +37,7 @@ This document outlines the architecture, completed milestones, and future goals 
 - [ ] Define hardware capability discovery so applications can query available pins and peripherals at runtime.
 - [ ] Establish standard integer error codes and input validation across all host functions.
 - [ ] Create a host-side simulation layer that mocks GPIO state and timing for Linux development.
+- [x] Provide a dedicated Apache NuttX runner with native symbol registration for execution under NSH.
 
 ### Phase 3: Microcontroller Execution (RP2350)
 
