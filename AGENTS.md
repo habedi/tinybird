@@ -34,6 +34,7 @@ Priorities, in order:
 - This is a template, so keep it minimal: no features, abstractions, or dependencies beyond what shows the pattern. A new `build.zig.zon` dependency
   needs prior discussion.
 - Do not flash a board or open its serial port without being asked. The user may be using the board.
+  A request to flash also authorizes the software reset into BOOTSEL mode needed for that flash.
 
 ## External Dependencies
 
@@ -47,7 +48,7 @@ Priorities, in order:
 
 - `src/core/core.zig`: the hardware-free logic. It must stay freestanding-safe: no allocation, no I/O, and no OS calls, so the same code compiles
   for the host tests and for the firmware.
-- `src/firmware/main.zig`: the firmware entry point. It uses the MicroZig HAL and imports `core`.
+- `src/firmware/main.zig`: the firmware entry point. It uses the MicroZig HAL, imports `core`, and provides the LED blink pattern and USB CDC status output.
 - `tests/main.zig`: host-side tests that exercise `core` from the outside.
 - `build.zig`: the host test steps first, then the MicroZig firmware. Keep that order, so the host tests still run when a port dependency is
   missing.
@@ -62,8 +63,18 @@ All commands run inside the Nix dev shell:
 1. `make test` runs the host-side tests; no board is needed.
 2. `make build` builds the firmware and installs `zig-out/firmware/tinybird.uf2`.
 3. `make flash` loads the UF2 onto the Pico 2 over USB with picotool. Copying the UF2 to the board in BOOTSEL mode also works.
+4. `make console TTY=/dev/ttyACM0` opens the USB CDC console. The firmware sends `Tinybird running` once per second; it does not accept commands.
+
+The firmware exposes a USB reset interface, so picotool can ask it to enter BOOTSEL mode without pressing the button.
+If picotool reports that it lost the device after a software reset, retry `make flash`; the board may already be in BOOTSEL mode.
+Use the physical BOOTSEL button for the first flash, when firmware lacks the reset interface, or when the board stops responding.
+
+USB polling must continue between LED transitions. Do not replace the deadline checks with long blocking sleeps.
+The local USB controller adapter handles control OUT transfers that the pinned MicroZig stack omits.
+Keep it until an upgraded dependency handles those transfers and passes the real-board console checks.
 
 Serial access needs membership in the `dialout` group on most Linux distributions (some use `uucp` instead).
+Linux may assign a different port, such as `/dev/ttyACM1`.
 
 ## Adding a Board
 
@@ -77,7 +88,7 @@ The logic in `src/core/` is tested on the host, and those tests follow the red-g
 then make it pass. Tests live in two places: inside `core.zig` for internals, and in `tests/main.zig` for the exported surface.
 
 Firmware behavior cannot fail in CI, so it is verified by flashing the real board and watching the LED. A change to `src/firmware/` is not done
-until that has happened.
+until that has happened. For USB changes, also verify serial enumeration, periodic status output, and baud-rate changes on the real board.
 
 ## Writing Style
 

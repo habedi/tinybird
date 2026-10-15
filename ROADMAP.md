@@ -12,9 +12,9 @@ This document outlines the architecture, completed milestones, and future goals 
 | M0        | Host     | Project bootstrap, Zig 0.17.0, Nix shell, and CI workflows              | Completed   |
 | M1        | Host     | WAMR integration, host CLI runner, and sample Wasm applications         | Completed   |
 | M2        | Platform | Portable hardware API, host simulation, and error model                 | In Progress |
-| M3        | RP2350   | Bare-metal Pico 2 firmware, memory budget, and physical LED control     | Planned     |
+| M3        | RP2350   | Bare-metal Pico 2 firmware, memory budget, and physical LED control     | In Progress |
 | M4        | ESP32-C3 | Portability verification on RISC-V without application recompilation    | Planned     |
-| M5        | Device   | Persistent storage, USB serial shell, and dynamic application loading   | Planned     |
+| M5        | Device   | Persistent storage, USB serial shell, and dynamic application loading   | In Progress |
 | M6        | System   | Memory bounds, peripheral permissions, execution budgets, and isolation | Planned     |
 
 ### Phase 1: Host Runtime and Tooling
@@ -40,6 +40,7 @@ This document outlines the architecture, completed milestones, and future goals 
 
 ### Phase 3: Microcontroller Execution (RP2350)
 
+- [x] Native Pico 2 firmware with the LED blink pattern and USB polling.
 - [ ] Port the WAMR interpreter to bare-metal RP2350 using the MicroZig HAL.
 - [ ] Implement a fixed-budget memory pool in SRAM to avoid unconstrained dynamic allocation.
 - [ ] Profile memory usage by tracking flash consumption, runtime overhead, and linear memory footprint.
@@ -55,6 +56,8 @@ This document outlines the architecture, completed milestones, and future goals 
 
 ### Phase 5: Dynamic Application Management
 
+- [x] USB CDC console with periodic firmware status output.
+- [x] USB reset interface for software entry into BOOTSEL mode.
 - [ ] Develop an interactive serial shell supporting commands like `help`, `info`, `apps`, `install`, `run`, and `remove`.
 - [ ] Implement a storage abstraction that partitions flash memory for persistent application storage.
 - [ ] Create a transfer protocol to upload compiled WebAssembly binaries over USB serial.
@@ -74,6 +77,7 @@ This document outlines the architecture, completed milestones, and future goals 
 - [x] Write host-side unit tests for hardware-free core logic.
 - [x] Add host tests that exercise the WAMR runtime lifecycle and module instantiation.
 - [x] Configure pre-commit hook checks.
+- [x] USB CDC enumeration, status output, and baud-rate changes verified on a real Pico 2.
 - [ ] Configure automated code coverage reporting.
 - [ ] Implement automated integration tests for simulated hardware interactions.
 - [ ] Set up an automated test runner for verification on physical microcontroller boards.
