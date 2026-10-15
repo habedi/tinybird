@@ -76,7 +76,7 @@ Run a sample WebAssembly application on the host:
 
 #### Flashing Firmware to the Pico 2
 
-1. Enter BOOTSEL mode by holding down the white `BOOTSEL` button on the Pico 2 while plugging the USB cable into your development machine, then release it.
+1. Enter BOOTSEL mode by holding down the white `BOOTSEL` button on the Pico 2 while plugging the USB cable into your machine, then release it.
 2. Flash the board:
 
 ```shell
@@ -87,33 +87,16 @@ make flash
 make flash FIRMWARE_UF2=zig-out/firmware/tinybird.uf2
 ```
 
-Alternatively, copy the UF2 file directly to the mounted mass-storage volume:
-
-```shell
-# On Linux
-cp zig-out/firmware/tinybird.uf2 /media/$USER/RP2350/
-
-# On macOS
-cp zig-out/firmware/tinybird.uf2 /Volumes/RP2350/
-```
-
-The board unmounts and reboots automatically when writing finishes.
-
-> [!NOTE]
-> On the plain Pico 2, the onboard LED on GPIO 25 will blink.
-> On the Pico 2 W, the onboard LED is wired through the wireless chip, so wire an external LED to GPIO 25 and GND to observe blinking.
-
 #### Connecting to the Serial Console
 
 To monitor serial output from the board over USB CDC:
 
 ```shell
-# Connect to the serial console at 115200 baud
-picocom -b 115200 /dev/ttyACM0
+make console TTY=/dev/ttyACM0
 ```
 
 > [!TIP]
-> On Linux, access to `/dev/ttyACM0` requires membership in the `dialout` group (or `uucp` on Arch Linux):
+> On Linux, access to `/dev/ttyACM0` needs membership in the `dialout` group:
 > ```shell
 > sudo usermod -aG dialout $USER
 > ```

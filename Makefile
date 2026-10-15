@@ -16,6 +16,8 @@ COVERAGE_DIR  := coverage
 FIRMWARE_NAME ?= tinybird
 FIRMWARE_UF2  ?= $(BUILD_DIR)/firmware/$(FIRMWARE_NAME).uf2
 RELEASE_MODE := ReleaseSmall
+TTY          ?= /dev/ttyACM0
+BAUD         ?= 115200
 
 SHELL         := /usr/bin/env bash
 .SHELLFLAGS   := -eu -o pipefail -c
@@ -24,7 +26,7 @@ SHELL         := /usr/bin/env bash
 # Targets
 ################################################################################
 
-.PHONY: all shell install build rebuild flash test cov lint format docs clean install-deps release help setup-hooks test-hooks
+.PHONY: all shell install build rebuild flash console test cov lint format docs clean install-deps release help setup-hooks test-hooks
 .DEFAULT_GOAL := help
 
 help: ## Show the help messages for all targets
@@ -47,6 +49,10 @@ rebuild: clean build  ## clean and build
 flash: build  ## Flash the firmware to the board over USB (default: FIRMWARE_NAME=tinybird)
 	@echo "Flashing $(FIRMWARE_UF2)..."
 	picotool load -fx $(FIRMWARE_UF2)
+
+console: ## Connect to the serial console over USB (default: TTY=/dev/ttyACM0 BAUD=115200)
+	@echo "Connecting to $(TTY) at $(BAUD) baud (exit with Ctrl-a Ctrl-x)..."
+	picocom -b $(BAUD) $(TTY)
 
 test: ## Run the host-side tests and generate coverage data
 	@echo "Running tests with coverage enabled..."
