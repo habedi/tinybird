@@ -118,17 +118,32 @@ pub fn main(init: std.process.Init) !u8 {
             return 1;
         };
 
-        var call_args = try allocator.alloc(u32, @max(1, args.len - 4));
+        const param_count = vm.c.wasm_func_get_param_count(func.handle, func.instance);
+        if (args.len - 4 != param_count) {
+            std.debug.print("Error: expected {d} arguments, received {d}\n", .{ param_count, args.len - 4 });
+            return 1;
+        }
+        const param_types = try allocator.alloc(vm.c.wasm_valkind_t, param_count);
+        vm.c.wasm_func_get_param_types(func.handle, func.instance, param_types.ptr);
+        const call_args = try allocator.alloc(vm.c.wasm_val_t, param_count);
 
         for (args[4..], 0..) |arg_str, i| {
-            call_args[i] = std.fmt.parseInt(u32, arg_str, 10) catch |err| {
-                std.debug.print("Invalid integer argument '{s}': {t}\n", .{ arg_str, err });
+            if (param_types[i] != vm.c.WASM_I32) {
+                std.debug.print("Error: only i32 arguments are supported\n", .{});
                 return 1;
+            }
+            const value = std.fmt.parseInt(i32, arg_str, 10) catch blk: {
+                const bits = std.fmt.parseInt(u32, arg_str, 10) catch |err| {
+                    std.debug.print("Invalid integer argument '{s}': {t}\n", .{ arg_str, err });
+                    return 1;
+                };
+                break :blk @as(i32, @bitCast(bits));
             };
+            call_args[i] = .{ .kind = vm.c.WASM_I32, .of = .{ .i32 = value } };
         }
 
-        const argc: usize = args.len - 4;
-        func.call(&exec_env, call_args[0..argc]) catch {
+        const results = try allocator.alloc(vm.c.wasm_val_t, vm.c.wasm_func_get_result_count(func.handle, func.instance));
+        func.call(&exec_env, call_args, results) catch {
             if (instance.getException()) |exc| {
                 std.debug.print("Execution error: {s}\n", .{exc});
             } else {
@@ -137,15 +152,21 @@ pub fn main(init: std.process.Init) !u8 {
             return 1;
         };
 
-        if (call_args.len > 0) {
-            std.debug.print("Result: {d}\n", .{call_args[0]});
+        for (results) |result| {
+            switch (result.kind) {
+                vm.c.WASM_I32 => std.debug.print("Result: {d}\n", .{result.of.i32}),
+                vm.c.WASM_I64 => std.debug.print("Result: {d}\n", .{result.of.i64}),
+                vm.c.WASM_F32 => std.debug.print("Result: {d}\n", .{result.of.f32}),
+                vm.c.WASM_F64 => std.debug.print("Result: {d}\n", .{result.of.f64}),
+                else => std.debug.print("Result: unsupported type\n", .{}),
+            }
         }
         return 0;
     }
 
     if (instance.lookupFunction("main")) |main_func| {
-        var call_args = [_]u32{};
-        main_func.call(&exec_env, &call_args) catch {
+        const results = try allocator.alloc(vm.c.wasm_val_t, vm.c.wasm_func_get_result_count(main_func.handle, main_func.instance));
+        main_func.call(&exec_env, &.{}, results) catch {
             if (instance.getException()) |exc| {
                 std.debug.print("Execution error: {s}\n", .{exc});
             } else {
@@ -157,8 +178,12 @@ pub fn main(init: std.process.Init) !u8 {
     }
 
     if (instance.lookupFunction("add")) |add_func| {
-        var call_args = [_]u32{ 40, 2 };
-        add_func.call(&exec_env, &call_args) catch {
+        var call_args = [_]vm.c.wasm_val_t{
+            .{ .kind = vm.c.WASM_I32, .of = .{ .i32 = 40 } },
+            .{ .kind = vm.c.WASM_I32, .of = .{ .i32 = 2 } },
+        };
+        const results = try allocator.alloc(vm.c.wasm_val_t, vm.c.wasm_func_get_result_count(add_func.handle, add_func.instance));
+        add_func.call(&exec_env, &call_args, results) catch {
             if (instance.getException()) |exc| {
                 std.debug.print("Execution error: {s}\n", .{exc});
             } else {
@@ -166,13 +191,15 @@ pub fn main(init: std.process.Init) !u8 {
             }
             return 1;
         };
-        std.debug.print("Result: {d}\n", .{call_args[0]});
+        if (results.len > 0 and results[0].kind == vm.c.WASM_I32) {
+            std.debug.print("Result: {d}\n", .{results[0].of.i32});
+        }
         return 0;
     }
 
     if (instance.lookupFunction("_start")) |start_func| {
-        var call_args = [_]u32{};
-        start_func.call(&exec_env, &call_args) catch {
+        const results = try allocator.alloc(vm.c.wasm_val_t, vm.c.wasm_func_get_result_count(start_func.handle, start_func.instance));
+        start_func.call(&exec_env, &.{}, results) catch {
             if (instance.getException()) |exc| {
                 std.debug.print("Execution error: {s}\n", .{exc});
             } else {
