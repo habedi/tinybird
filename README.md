@@ -39,6 +39,10 @@ See [ROADMAP.md](ROADMAP.md) for the list of implemented and planned features.
 > Additionally, you need Nix installed.
 > Currently, only the Raspberry Pi Pico 2 board is supported.
 
+<div align="center">
+  <img alt="NuttShell" src="docs/assets/images/pico/pico2wh.png" width="50%">
+</div>
+
 Clone the repository with submodules:
 
 ```shell
