@@ -218,6 +218,10 @@ pub fn build(b: *std.Build) void {
     });
     add_wasm.entry = .disabled;
     add_wasm.rdynamic = true;
+    // The default 1 MB linear memory exceeds the Pico 2's SRAM.
+    add_wasm.stack_size = 4096;
+    add_wasm.initial_memory = 65536;
+    add_wasm.max_memory = 131072;
     const install_add_wasm = b.addInstallArtifact(add_wasm, .{ .dest_dir = .{ .override = .{ .custom = "examples" } } });
 
     const hello_wasm = b.addExecutable(.{
@@ -230,6 +234,9 @@ pub fn build(b: *std.Build) void {
     });
     hello_wasm.entry = .disabled;
     hello_wasm.rdynamic = true;
+    hello_wasm.stack_size = 4096;
+    hello_wasm.initial_memory = 65536;
+    hello_wasm.max_memory = 131072;
     const install_hello_wasm = b.addInstallArtifact(hello_wasm, .{ .dest_dir = .{ .override = .{ .custom = "examples" } } });
 
     const examples_step = b.step("examples", "Build sample WebAssembly applications");
