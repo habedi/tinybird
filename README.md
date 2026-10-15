@@ -1,6 +1,6 @@
 <div align="center">
   <picture>
-    <img alt="Tinybird Logo" src="docs/assets/logo.svg" height="20%" width="20%">
+    <img alt="Tinybird Logo" src="docs/assets/logo.svg" height="25%" width="25%">
   </picture>
 <br>
 
@@ -22,6 +22,8 @@ A tiny application platform for microcontrollers
 Tinybird is a tiny Wasm-based application platform for microcontrollers.
 The main goal of the project is to provide a consistent execution environment and hardware API that allows developers to write applications once
 and run them on different devices without modifying their code.
+
+See [ROADMAP.md](ROADMAP.md) for the list of implemented and planned features.
 
 > [!IMPORTANT]
 > Tinybird is in early development, so bugs and breaking changes are expected.
