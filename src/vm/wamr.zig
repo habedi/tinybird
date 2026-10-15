@@ -35,14 +35,16 @@ pub const Runtime = struct {
         c.wasm_runtime_destroy();
     }
 
+    /// WAMR sorts the symbols in place. The array, module name, and symbol
+    /// strings must remain valid until the runtime is destroyed.
     pub fn registerNatives(
         self: *Runtime,
         module_name: [:0]const u8,
-        symbols: []const NativeSymbol,
+        symbols: []NativeSymbol,
     ) Error!void {
         _ = self;
         const count: u32 = @intCast(symbols.len);
-        const ptr: [*]c.NativeSymbol = @ptrCast(@constCast(symbols.ptr));
+        const ptr: [*]c.NativeSymbol = @ptrCast(symbols.ptr);
         if (!c.wasm_runtime_register_natives(module_name.ptr, ptr, count)) {
             return Error.RegisterNativesFailed;
         }
@@ -154,6 +156,14 @@ pub const Function = struct {
         if (c.wasm_runtime_get_module_inst(exec_env.handle) != self.instance) {
             return Error.ExecutionFailed;
         }
+        const param_count = c.wasm_func_get_param_count(self.handle, self.instance);
+        if (args.len != param_count) return Error.ExecutionFailed;
+        const param_types = std.heap.c_allocator.alloc(c.wasm_valkind_t, param_count) catch return Error.OutOfMemory;
+        defer std.heap.c_allocator.free(param_types);
+        c.wasm_func_get_param_types(self.handle, self.instance, param_types.ptr);
+        for (args, param_types) |arg, param_type| {
+            if (arg.kind != param_type) return Error.ExecutionFailed;
+        }
         const ok = c.wasm_runtime_call_wasm_a(
             exec_env.handle,
             self.handle,
@@ -183,7 +193,12 @@ test "native function registration" {
     var rt = try Runtime.init();
     defer rt.deinit();
 
-    const symbols = [_]NativeSymbol{
+    var symbols = [_]NativeSymbol{
+        .{
+            .symbol = "z_log",
+            .func_ptr = @ptrCast(&testNativeLog),
+            .signature = "(i)",
+        },
         .{
             .symbol = "log",
             .func_ptr = @ptrCast(@constCast(&testNativeLog)),
@@ -191,6 +206,8 @@ test "native function registration" {
         },
     };
     try rt.registerNatives("tinybird", &symbols);
+    try std.testing.expectEqualStrings("log", std.mem.span(symbols[0].symbol));
+    try std.testing.expectEqualStrings("z_log", std.mem.span(symbols[1].symbol));
 }
 
 test "module load, instantiate, and execute add" {
@@ -225,6 +242,12 @@ test "module load, instantiate, and execute add" {
     try func.call(&exec_env, &args, &results);
     try std.testing.expectEqual(@as(i32, 42), results[0].of.i32);
     try std.testing.expectError(error.ExecutionFailed, func.call(&exec_env, args[0..1], &results));
+
+    var wrong_types = [_]c.wasm_val_t{
+        .{ .kind = c.WASM_I64, .of = .{ .i64 = 15 } },
+        .{ .kind = c.WASM_I64, .of = .{ .i64 = 27 } },
+    };
+    try std.testing.expectError(error.ExecutionFailed, func.call(&exec_env, &wrong_types, &results));
 
     var other_instance = try Instance.instantiate(&module, 8192, 8192);
     defer other_instance.deinit();

@@ -73,7 +73,8 @@ This document outlines the architecture, completed milestones, and future goals 
 
 - [x] Write host-side unit tests for hardware-free core logic.
 - [x] Add host tests that exercise the WAMR runtime lifecycle and module instantiation.
-- [x] Configure automated code coverage reporting and pre-commit hook checks.
+- [x] Configure pre-commit hook checks.
+- [ ] Configure automated code coverage reporting.
 - [ ] Implement automated integration tests for simulated hardware interactions.
 - [ ] Set up an automated test runner for verification on physical microcontroller boards.
 - [ ] Create benchmarks to measure execution overhead and memory footprint across targets.

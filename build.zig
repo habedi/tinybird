@@ -99,15 +99,15 @@ fn buildWamr(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.buil
 
 pub fn build(b: *std.Build) void {
     const host_target = b.standardTargetOptions(.{});
+    if (host_target.result.os.tag != .linux) {
+        @panic("The Tinybird host runner supports Linux only");
+    }
     const optimize = b.standardOptimizeOption(.{});
     const fw_optimize = b.option(
         std.builtin.Optimize,
         "firmware-optimize",
         "Optimization mode for firmware targets (defaults to small)",
     ) orelse .small;
-
-    // register the flag so `-Denable-coverage=true` is valid
-    _ = b.option(bool, "enable-coverage", "Enable coverage instrumentation") orelse false;
 
     // The core module holds the hardware-free logic. Its tests run on the
     // host, so `zig build test` needs no board attached.

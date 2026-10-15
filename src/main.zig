@@ -74,7 +74,7 @@ pub fn main(init: std.process.Init) !u8 {
     };
     defer runtime.deinit();
 
-    const native_symbols = [_]vm.NativeSymbol{
+    var native_symbols = [_]vm.NativeSymbol{
         .{
             .symbol = "log",
             .func_ptr = @ptrCast(@constCast(&nativeLog)),

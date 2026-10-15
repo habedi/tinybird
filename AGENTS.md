@@ -40,7 +40,7 @@ Priorities, in order:
 - MicroZig comes through `build.zig.zon` and is the only Zig dependency.
 - Python tools (pre-commit) are managed by uv through `pyproject.toml`. Run them as `uv run pre-commit`. Do not install Python tools with pip into
   the system interpreter.
-- Everything else (the Zig compiler, picotool, picocom, kcov) comes from the Nix dev shell in `flake.nix`. Enter it with `nix develop` or
+- Everything else (the Zig compiler, picotool, and picocom) comes from the Nix dev shell in `flake.nix`. Enter it with `nix develop` or
   `make shell`. On a Debian-based system without Nix, `make install-deps` installs a partial set with apt.
 
 ## Repository Layout
@@ -52,7 +52,7 @@ Priorities, in order:
 - `build.zig`: the host test steps first, then the MicroZig firmware. Keep that order, so the host tests still run when a port dependency is
   missing.
 - `docs/`: documentation and assets; `docs/api/` is generated and never committed.
-- `.github/workflows/`: CI workflows for checks, tests, coverage, and docs.
+- `.github/workflows/`: CI workflows for checks, tests, and docs.
 - `Makefile`: developer tasks; run `make help` to list them.
 
 ## Building and Flashing

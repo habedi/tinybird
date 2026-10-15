@@ -34,7 +34,7 @@ See [ROADMAP.md](ROADMAP.md) for the list of implemented and planned features.
 ### Quickstart
 
 > [!IMPORTANT]
-> The instructions below are for Linux and macOS.
+> The instructions below are for Linux.
 > Use Windows Subsystem for Linux (WSL) on Windows.
 > A working Nix installation with flakes enabled is needed.
 > Currently, the primary microcontroller target is the Raspberry Pi Pico 2.
@@ -103,7 +103,7 @@ make console TTY=/dev/ttyACM0
 
 ---
 
-### Documentation 
+### Documentation
 
 Check out the project [documentation](docs/README.md) for more information.
 
