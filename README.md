@@ -13,7 +13,7 @@
 [![MicroZig Version](https://img.shields.io/badge/MicroZig-0.17.20-F7A41D?logo=zig&labelColor=282c34)](https://microzig.tech/)
 [![License](https://img.shields.io/badge/license-Apache_2.0-007ec6?label=license&style=flat&labelColor=282c34&logo=open-source-initiative)](LICENSE)
 
-A tiny Wasm-based application platform for microcontrollers
+A tiny application platform for microcontrollers
 
 </div>
 
