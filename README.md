@@ -81,6 +81,9 @@ Flash the firmware to a connected Raspberry Pi Pico 2:
 make flash
 ```
 
+> [!NOTE]
+> You need to put the board into bootloader mode by pressing the BOOTSEL button while plugging it in.
+
 ```shell
 # See all available commands and their descriptions
 make help
