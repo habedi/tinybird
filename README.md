@@ -39,10 +39,6 @@ See [ROADMAP.md](ROADMAP.md) for the list of implemented and planned features.
 > A working Nix installation with flakes enabled is needed.
 > Currently, the primary microcontroller target is the Raspberry Pi Pico 2.
 
-<div align="center">
-  <img alt="Raspberry Pi Pico 2" src="docs/assets/images/pico/pico2wh.png" width="50%">
-</div>
-
 Clone the repository with submodules:
 
 ```shell
@@ -87,6 +83,10 @@ make flash
 make flash FIRMWARE_UF2=zig-out/firmware/tinybird.uf2
 ```
 
+<div align="center">
+  <img alt="Raspberry Pi Pico 2" src="docs/assets/images/pico/pico2wh.png" width="50%">
+</div>
+
 #### Connecting to the Serial Console
 
 To monitor serial output from the board over USB CDC:
@@ -101,8 +101,15 @@ make console TTY=/dev/ttyACM0
 > sudo usermod -aG dialout $USER
 > ```
 
+---
+
+### Documentation 
+
+Check out the project [documentation](docs/README.md) for more information.
+
+To see all available commands in [Makefile](Makefile) and their descriptions, run:
+
 ```shell
-# See all available commands and their descriptions
 make help
 ```
 
