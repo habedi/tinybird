@@ -81,15 +81,12 @@ until that has happened.
 
 ## Writing Style
 
-- Write plain, simple English, in docs and in code comments alike. Use short sentences and everyday words. Keep every fact, name, number, link, and
-  file path when you rewrite prose.
-- Keep Markdown structure when you rewrite: headings, lists, tables, and links. Do not change fenced code blocks or YAML frontmatter; reproduce them
-  exactly.
+- Write plain, simple English, in docs and in code comments.
 - Use Oxford commas in inline lists: "a, b, and c" not "a, b, c".
-- Do not use em dashes, in documentation or in code comments. Restructure the sentence, or use a colon or semicolon instead.
+- Do not use em dashes, in documentation or in code comments. Restructure the sentence or use a colon or semicolon instead.
 - Avoid colorful adjectives and adverbs. Write "rate limiter" not "smart rate limiter".
 - Prefer noun phrases for checklist items over imperative verbs. Write "rate limit enforcement" not "enforce rate limits".
-- Headings in Markdown files must be in title case: "Build from Source" not "Build from source". Minor words stay lowercase unless they are the first
+- Headings in Markdown files must be in the title case: "Build from Source" not "Build from source". Minor words stay lowercase unless they are the first
   word: the articles (a, an, the), the coordinating conjunctions (and, but, or, nor, so, yet, for), and the short prepositions (in, on, at, to, by,
   of, up, as, from, with, into, over). The prepositions are named because "from" has to be lowercase for "Build from Source" to be correct.
 - Do not bold the lead-in of a list item. Write "Unit tests: ..." not "**Unit tests**: ...".
