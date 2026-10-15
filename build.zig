@@ -99,15 +99,15 @@ fn buildWamr(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.buil
 
 pub fn build(b: *std.Build) void {
     const host_target = b.standardTargetOptions(.{});
+    if (host_target.result.os.tag != .linux) {
+        @panic("The Tinybird host runner supports Linux only");
+    }
     const optimize = b.standardOptimizeOption(.{});
     const fw_optimize = b.option(
         std.builtin.Optimize,
         "firmware-optimize",
         "Optimization mode for firmware targets (defaults to small)",
     ) orelse .small;
-
-    // register the flag so `-Denable-coverage=true` is valid
-    _ = b.option(bool, "enable-coverage", "Enable coverage instrumentation") orelse false;
 
     // The core module holds the hardware-free logic. Its tests run on the
     // host, so `zig build test` needs no board attached.
@@ -198,6 +198,7 @@ pub fn build(b: *std.Build) void {
 
     const run_cmd = b.addRunArtifact(exe);
     run_cmd.step.dependOn(b.getInstallStep());
+    run_cmd.addPassthruArgs();
     const run_step = b.step("run", "Run the tinybird CLI runner");
     run_step.dependOn(&run_cmd.step);
 
@@ -217,6 +218,10 @@ pub fn build(b: *std.Build) void {
     });
     add_wasm.entry = .disabled;
     add_wasm.rdynamic = true;
+    // The default 1 MB linear memory exceeds the Pico 2's SRAM.
+    add_wasm.stack_size = 4096;
+    add_wasm.initial_memory = 65536;
+    add_wasm.max_memory = 131072;
     const install_add_wasm = b.addInstallArtifact(add_wasm, .{ .dest_dir = .{ .override = .{ .custom = "examples" } } });
 
     const hello_wasm = b.addExecutable(.{
@@ -229,12 +234,50 @@ pub fn build(b: *std.Build) void {
     });
     hello_wasm.entry = .disabled;
     hello_wasm.rdynamic = true;
+    hello_wasm.stack_size = 4096;
+    hello_wasm.initial_memory = 65536;
+    hello_wasm.max_memory = 131072;
     const install_hello_wasm = b.addInstallArtifact(hello_wasm, .{ .dest_dir = .{ .override = .{ .custom = "examples" } } });
 
     const examples_step = b.step("examples", "Build sample WebAssembly applications");
     examples_step.dependOn(&install_add_wasm.step);
     examples_step.dependOn(&install_hello_wasm.step);
     b.default_step.dependOn(examples_step);
+
+    const add_test = b.addRunArtifact(exe);
+    add_test.addArg("run");
+    add_test.addArtifactArg(add_wasm);
+    add_test.addArgs(&.{ "add", "-15", "27" });
+    add_test.expectStdErrEqual("Result: 12\n");
+    test_step.dependOn(&add_test.step);
+
+    const unsigned_arg_test = b.addRunArtifact(exe);
+    unsigned_arg_test.addArg("run");
+    unsigned_arg_test.addArtifactArg(add_wasm);
+    unsigned_arg_test.addArgs(&.{ "add", "4294967295", "1" });
+    unsigned_arg_test.expectStdErrEqual("Result: 0\n");
+    test_step.dependOn(&unsigned_arg_test.step);
+
+    const hello_test = b.addRunArtifact(exe);
+    hello_test.addArg("run");
+    hello_test.addArtifactArg(hello_wasm);
+    hello_test.expectStdErrEqual("42\n");
+    test_step.dependOn(&hello_test.step);
+
+    const explicit_hello_test = b.addRunArtifact(exe);
+    explicit_hello_test.addArg("run");
+    explicit_hello_test.addArtifactArg(hello_wasm);
+    explicit_hello_test.addArg("main");
+    explicit_hello_test.expectStdErrEqual("42\n");
+    test_step.dependOn(&explicit_hello_test.step);
+
+    const missing_arg_test = b.addRunArtifact(exe);
+    missing_arg_test.addArg("run");
+    missing_arg_test.addArtifactArg(add_wasm);
+    missing_arg_test.addArgs(&.{ "add", "15" });
+    missing_arg_test.expectExitCode(1);
+    missing_arg_test.expectStdErrEqual("Error: expected 2 arguments, received 1\n");
+    test_step.dependOn(&missing_arg_test.step);
 
     // The firmware. MicroZig provides the startup code, the linker script,
     // and the HAL; the core module is imported into it unchanged.

@@ -13,8 +13,7 @@
     let
       # Development happens on a Linux machine the board plugs into, on either amd64 or arm64.
       supportedSystems = [ "x86_64-linux"
-                           "aarch64-linux"
-                           "aarch64-darwin"];
+                           "aarch64-linux"];
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
     in
     {
@@ -29,9 +28,9 @@
               # Zig pinned to 0.17.0 (matching MicroZig 0.17.20)
               zig
 
-              # Build and coverage tools
+              # Build tools
               gnumake
-            ] ++ pkgs.lib.optional pkgs.stdenv.hostPlatform.isLinux pkgs.kcov ++ (with pkgs; [
+
               # Flashing and the serial console
               picotool
               picocom
@@ -39,7 +38,7 @@
               # uv manages the Python tools (pre-commit) through
               # pyproject.toml.
               uv
-            ]);
+            ];
           };
         }
       );

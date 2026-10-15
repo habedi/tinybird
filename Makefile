@@ -12,10 +12,11 @@ BUILD_DIR     := zig-out
 CACHE_DIR     := .zig-cache
 DOC_SRC       := src/core/core.zig
 DOC_OUT       := docs/api/
-COVERAGE_DIR  := coverage
 FIRMWARE_NAME ?= tinybird
 FIRMWARE_UF2  ?= $(BUILD_DIR)/firmware/$(FIRMWARE_NAME).uf2
 RELEASE_MODE := ReleaseSmall
+TTY          ?= /dev/ttyACM0
+BAUD         ?= 115200
 
 SHELL         := /usr/bin/env bash
 .SHELLFLAGS   := -eu -o pipefail -c
@@ -24,7 +25,7 @@ SHELL         := /usr/bin/env bash
 # Targets
 ################################################################################
 
-.PHONY: all shell install build rebuild flash test cov lint format docs clean install-deps release help setup-hooks test-hooks
+.PHONY: all shell install build rebuild flash console test lint format docs clean install-deps release help setup-hooks test-hooks
 .DEFAULT_GOAL := help
 
 help: ## Show the help messages for all targets
@@ -48,17 +49,21 @@ flash: build  ## Flash the firmware to the board over USB (default: FIRMWARE_NAM
 	@echo "Flashing $(FIRMWARE_UF2)..."
 	picotool load -fx $(FIRMWARE_UF2)
 
-test: ## Run the host-side tests and generate coverage data
-	@echo "Running tests with coverage enabled..."
-	$(ZIG) build test $(BUILD_OPTS) -Denable-coverage=true -j$(JOBS)
+console: ## Connect to the serial console over USB (default: TTY=/dev/ttyACM0 BAUD=115200)
+	@echo "Connecting to $(TTY) at $(BAUD) baud (exit with Ctrl-a Ctrl-x)..."
+	picocom -b $(BAUD) $(TTY)
+
+test: ## Run the host-side tests
+	@echo "Running host-side tests..."
+	$(ZIG) build test $(BUILD_OPTS) -j$(JOBS)
 
 release: ## Build the host CLI, Wasm apps, and firmware in Release mode
 	@echo "Building in Release mode..."
 	@$(MAKE) BUILD_TYPE=$(RELEASE_MODE) build
 
 clean: ## Remove docs, build artifacts, and cache directories
-	@echo "Removing build artifacts, cache, generated docs, and coverage files..."
-	rm -rf $(BUILD_DIR) $(CACHE_DIR) $(DOC_OUT) *.profraw $(COVERAGE_DIR)
+	@echo "Removing build artifacts, cache, and generated docs..."
+	rm -rf $(BUILD_DIR) $(CACHE_DIR) $(DOC_OUT)
 
 lint: ## Check code style and formatting of Zig files
 	@echo "Running code style checks..."
@@ -71,18 +76,7 @@ format: ## Format Zig files
 docs: ## Generate API documentation
 	@echo "Generating documentation from $(DOC_SRC) to $(DOC_OUT)..."
 	mkdir -p $(DOC_OUT)
-	@if $(ZIG) doc --help > /dev/null 2>&1; then \
-	  $(ZIG) doc $(DOC_SRC) --output-dir $(DOC_OUT); \
-	else \
-	  $(ZIG) test -femit-docs $(DOC_SRC); \
-	  for f in docs/*; do \
-		base=$$(basename "$$f"); \
-		if [ "$$base" = "assets" ] || [ "$$base" = "api" ]; then \
-		  continue; \
-		fi; \
-		mv "$$f" $(DOC_OUT)/; \
-	  done; \
-	fi
+	$(ZIG) test -fno-emit-bin -femit-docs=$(DOC_OUT) $(DOC_SRC)
 
 install-deps: ## Install system dependencies (for Debian-based systems)
 	@echo "Installing system dependencies..."

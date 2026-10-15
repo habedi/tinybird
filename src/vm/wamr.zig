@@ -35,14 +35,16 @@ pub const Runtime = struct {
         c.wasm_runtime_destroy();
     }
 
+    /// WAMR sorts the symbols in place. The array, module name, and symbol
+    /// strings must remain valid until the runtime is destroyed.
     pub fn registerNatives(
         self: *Runtime,
         module_name: [:0]const u8,
-        symbols: []const NativeSymbol,
+        symbols: []NativeSymbol,
     ) Error!void {
         _ = self;
         const count: u32 = @intCast(symbols.len);
-        const ptr: [*]c.NativeSymbol = @ptrCast(@constCast(symbols.ptr));
+        const ptr: [*]c.NativeSymbol = @ptrCast(symbols.ptr);
         if (!c.wasm_runtime_register_natives(module_name.ptr, ptr, count)) {
             return Error.RegisterNativesFailed;
         }
@@ -150,10 +152,23 @@ pub const Function = struct {
     handle: c.wasm_function_inst_t,
     instance: c.wasm_module_inst_t,
 
-    pub fn call(self: Function, exec_env: *ExecEnv, args: []u32) Error!void {
-        const ok = c.wasm_runtime_call_wasm(
+    pub fn call(self: Function, exec_env: *ExecEnv, args: []c.wasm_val_t, results: []c.wasm_val_t) Error!void {
+        if (c.wasm_runtime_get_module_inst(exec_env.handle) != self.instance) {
+            return Error.ExecutionFailed;
+        }
+        const param_count = c.wasm_func_get_param_count(self.handle, self.instance);
+        if (args.len != param_count) return Error.ExecutionFailed;
+        const param_types = std.heap.c_allocator.alloc(c.wasm_valkind_t, param_count) catch return Error.OutOfMemory;
+        defer std.heap.c_allocator.free(param_types);
+        c.wasm_func_get_param_types(self.handle, self.instance, param_types.ptr);
+        for (args, param_types) |arg, param_type| {
+            if (arg.kind != param_type) return Error.ExecutionFailed;
+        }
+        const ok = c.wasm_runtime_call_wasm_a(
             exec_env.handle,
             self.handle,
+            @intCast(results.len),
+            results.ptr,
             @intCast(args.len),
             args.ptr,
         );
@@ -178,7 +193,12 @@ test "native function registration" {
     var rt = try Runtime.init();
     defer rt.deinit();
 
-    const symbols = [_]NativeSymbol{
+    var symbols = [_]NativeSymbol{
+        .{
+            .symbol = "z_log",
+            .func_ptr = @ptrCast(&testNativeLog),
+            .signature = "(i)",
+        },
         .{
             .symbol = "log",
             .func_ptr = @ptrCast(@constCast(&testNativeLog)),
@@ -186,6 +206,8 @@ test "native function registration" {
         },
     };
     try rt.registerNatives("tinybird", &symbols);
+    try std.testing.expectEqualStrings("log", std.mem.span(symbols[0].symbol));
+    try std.testing.expectEqualStrings("z_log", std.mem.span(symbols[1].symbol));
 }
 
 test "module load, instantiate, and execute add" {
@@ -212,7 +234,49 @@ test "module load, instantiate, and execute add" {
 
     const func = instance.lookupFunction("add") orelse return error.TestExpectedFunction;
 
-    var args = [_]u32{ 15, 27 };
-    try func.call(&exec_env, &args);
-    try std.testing.expectEqual(@as(u32, 42), args[0]);
+    var args = [_]c.wasm_val_t{
+        .{ .kind = c.WASM_I32, .of = .{ .i32 = 15 } },
+        .{ .kind = c.WASM_I32, .of = .{ .i32 = 27 } },
+    };
+    var results: [1]c.wasm_val_t = undefined;
+    try func.call(&exec_env, &args, &results);
+    try std.testing.expectEqual(@as(i32, 42), results[0].of.i32);
+    try std.testing.expectError(error.ExecutionFailed, func.call(&exec_env, args[0..1], &results));
+
+    var wrong_types = [_]c.wasm_val_t{
+        .{ .kind = c.WASM_I64, .of = .{ .i64 = 15 } },
+        .{ .kind = c.WASM_I64, .of = .{ .i64 = 27 } },
+    };
+    try std.testing.expectError(error.ExecutionFailed, func.call(&exec_env, &wrong_types, &results));
+
+    var other_instance = try Instance.instantiate(&module, 8192, 8192);
+    defer other_instance.deinit();
+    var other_env = try ExecEnv.create(&other_instance, 8192);
+    defer other_env.deinit();
+    try std.testing.expectError(error.ExecutionFailed, func.call(&other_env, &args, &results));
+}
+
+test "a function result must fit in the call buffer" {
+    var rt = try Runtime.init();
+    defer rt.deinit();
+
+    const wasm_bytes = [_]u8{
+        0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
+        0x01, 0x05, 0x01, 0x60, 0x00, 0x01, 0x7e, 0x03,
+        0x02, 0x01, 0x00, 0x07, 0x08, 0x01, 0x04, 'm',
+        'a',  'i',  'n',  0x00, 0x00, 0x0a, 0x06, 0x01,
+        0x04, 0x00, 0x42, 0x2a, 0x0b,
+    };
+    var module = try Module.load(std.testing.allocator, &wasm_bytes);
+    defer module.deinit();
+    var instance = try Instance.instantiate(&module, 8192, 8192);
+    defer instance.deinit();
+    var exec_env = try ExecEnv.create(&instance, 8192);
+    defer exec_env.deinit();
+    const func = instance.lookupFunction("main") orelse return error.TestExpectedFunction;
+
+    try std.testing.expectError(error.ExecutionFailed, func.call(&exec_env, &.{}, &.{}));
+    var results: [1]c.wasm_val_t = undefined;
+    try func.call(&exec_env, &.{}, &results);
+    try std.testing.expectEqual(@as(i64, 42), results[0].of.i64);
 }

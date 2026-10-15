@@ -34,25 +34,26 @@ Priorities, in order:
 - This is a template, so keep it minimal: no features, abstractions, or dependencies beyond what shows the pattern. A new `build.zig.zon` dependency
   needs prior discussion.
 - Do not flash a board or open its serial port without being asked. The user may be using the board.
+  A request to flash also authorizes the software reset into BOOTSEL mode needed for that flash.
 
 ## External Dependencies
 
 - MicroZig comes through `build.zig.zon` and is the only Zig dependency.
 - Python tools (pre-commit) are managed by uv through `pyproject.toml`. Run them as `uv run pre-commit`. Do not install Python tools with pip into
   the system interpreter.
-- Everything else (the Zig compiler, picotool, picocom, kcov) comes from the Nix dev shell in `flake.nix`. Enter it with `nix develop` or
+- Everything else (the Zig compiler, picotool, and picocom) comes from the Nix dev shell in `flake.nix`. Enter it with `nix develop` or
   `make shell`. On a Debian-based system without Nix, `make install-deps` installs a partial set with apt.
 
 ## Repository Layout
 
 - `src/core/core.zig`: the hardware-free logic. It must stay freestanding-safe: no allocation, no I/O, and no OS calls, so the same code compiles
   for the host tests and for the firmware.
-- `src/firmware/main.zig`: the firmware entry point. It uses the MicroZig HAL and imports `core`.
+- `src/firmware/main.zig`: the firmware entry point. It uses the MicroZig HAL, imports `core`, and provides the LED blink pattern and USB CDC status output.
 - `tests/main.zig`: host-side tests that exercise `core` from the outside.
 - `build.zig`: the host test steps first, then the MicroZig firmware. Keep that order, so the host tests still run when a port dependency is
   missing.
 - `docs/`: documentation and assets; `docs/api/` is generated and never committed.
-- `.github/workflows/`: CI workflows for checks, tests, coverage, and docs.
+- `.github/workflows/`: CI workflows for checks, tests, and docs.
 - `Makefile`: developer tasks; run `make help` to list them.
 
 ## Building and Flashing
@@ -62,8 +63,18 @@ All commands run inside the Nix dev shell:
 1. `make test` runs the host-side tests; no board is needed.
 2. `make build` builds the firmware and installs `zig-out/firmware/tinybird.uf2`.
 3. `make flash` loads the UF2 onto the Pico 2 over USB with picotool. Copying the UF2 to the board in BOOTSEL mode also works.
+4. `make console TTY=/dev/ttyACM0` opens the USB CDC console. The firmware sends `Tinybird running` once per second; it does not accept commands.
+
+The firmware exposes a USB reset interface, so picotool can ask it to enter BOOTSEL mode without pressing the button.
+If picotool reports that it lost the device after a software reset, retry `make flash`; the board may already be in BOOTSEL mode.
+Use the physical BOOTSEL button for the first flash, when firmware lacks the reset interface, or when the board stops responding.
+
+USB polling must continue between LED transitions. Do not replace the deadline checks with long blocking sleeps.
+The local USB controller adapter handles control OUT transfers that the pinned MicroZig stack omits.
+Keep it until an upgraded dependency handles those transfers and passes the real-board console checks.
 
 Serial access needs membership in the `dialout` group on most Linux distributions (some use `uucp` instead).
+Linux may assign a different port, such as `/dev/ttyACM1`.
 
 ## Adding a Board
 
@@ -77,19 +88,16 @@ The logic in `src/core/` is tested on the host, and those tests follow the red-g
 then make it pass. Tests live in two places: inside `core.zig` for internals, and in `tests/main.zig` for the exported surface.
 
 Firmware behavior cannot fail in CI, so it is verified by flashing the real board and watching the LED. A change to `src/firmware/` is not done
-until that has happened.
+until that has happened. For USB changes, also verify serial enumeration, periodic status output, and baud-rate changes on the real board.
 
 ## Writing Style
 
-- Write plain, simple English, in docs and in code comments alike. Use short sentences and everyday words. Keep every fact, name, number, link, and
-  file path when you rewrite prose.
-- Keep Markdown structure when you rewrite: headings, lists, tables, and links. Do not change fenced code blocks or YAML frontmatter; reproduce them
-  exactly.
+- Write plain, simple English, in docs and in code comments.
 - Use Oxford commas in inline lists: "a, b, and c" not "a, b, c".
-- Do not use em dashes, in documentation or in code comments. Restructure the sentence, or use a colon or semicolon instead.
+- Do not use em dashes, in documentation or in code comments. Restructure the sentence or use a colon or semicolon instead.
 - Avoid colorful adjectives and adverbs. Write "rate limiter" not "smart rate limiter".
 - Prefer noun phrases for checklist items over imperative verbs. Write "rate limit enforcement" not "enforce rate limits".
-- Headings in Markdown files must be in title case: "Build from Source" not "Build from source". Minor words stay lowercase unless they are the first
+- Headings in Markdown files must be in the title case: "Build from Source" not "Build from source". Minor words stay lowercase unless they are the first
   word: the articles (a, an, the), the coordinating conjunctions (and, but, or, nor, so, yet, for), and the short prepositions (in, on, at, to, by,
   of, up, as, from, with, into, over). The prepositions are named because "from" has to be lowercase for "Build from Source" to be correct.
 - Do not bold the lead-in of a list item. Write "Unit tests: ..." not "**Unit tests**: ...".

@@ -1,6 +1,6 @@
 <div align="center">
   <picture>
-    <img alt="Tinybird Logo" src="docs/assets/logo.svg" height="20%" width="20%">
+    <img alt="Tinybird Logo" src="docs/assets/logo.svg" height="25%" width="25%">
   </picture>
 <br>
 
@@ -23,6 +23,8 @@ Tinybird is a tiny Wasm-based application platform for microcontrollers.
 The main goal of the project is to provide a consistent execution environment and hardware API that allows developers to write applications once
 and run them on different devices without modifying their code.
 
+See [ROADMAP.md](ROADMAP.md) for the list of implemented and planned features.
+
 > [!IMPORTANT]
 > Tinybird is in early development, so bugs and breaking changes are expected.
 > Use the [issues page](https://github.com/habedi/tinybird/issues) to report bugs or request features.
@@ -32,10 +34,10 @@ and run them on different devices without modifying their code.
 ### Quickstart
 
 > [!IMPORTANT]
-> The instructions below are for Linux and macOS.
-> It's recommended to use Windows Subsystem for Linux (WSL) on Windows.
-> Additionally, you need Nix installed.
-> Currently, only the Raspberry Pi Pico 2 board is supported.
+> The instructions below are for Linux.
+> Use Windows Subsystem for Linux (WSL) on Windows.
+> A working Nix installation with flakes enabled is needed.
+> Currently, the primary microcontroller target is the Raspberry Pi Pico 2.
 
 Clone the repository with submodules:
 
@@ -47,14 +49,14 @@ cd tinybird
 Enter the development environment and build:
 
 ```shell
-# Enter the Nix dev shell and install the Python tools
+# Enter the Nix dev shell and install Python tools
 make shell
 make install
 
-# Run the host-side tests (no board needed)
+# Run host-side unit tests (no board needed)
 make test
 
-# Build the CLI runner, sample Wasm apps, and firmware
+# Build the host CLI, sample Wasm applications, and MCU firmware
 make build
 ```
 
@@ -68,15 +70,46 @@ Run a sample WebAssembly application on the host:
 ./zig-out/bin/tinybird run zig-out/examples/add.wasm add 10 20
 ```
 
-Flash the firmware to a connected Raspberry Pi Pico 2:
+#### Flashing Firmware to the Pico 2
+
+1. Enter BOOTSEL mode by holding down the white `BOOTSEL` button on the Pico 2 while plugging the USB cable into your machine, then release it.
+2. Flash the board:
 
 ```shell
-# Flash the MCU over USB
+# Option A: Automatic flash over USB using picotool
 make flash
+
+# Option B: Flash a specific UF2 file path
+make flash FIRMWARE_UF2=zig-out/firmware/tinybird.uf2
 ```
 
+<div align="center">
+  <img alt="Raspberry Pi Pico 2" src="docs/assets/images/pico/pico2wh.png" width="50%">
+</div>
+
+#### Connecting to the Serial Console
+
+To monitor serial output from the board over USB CDC:
+
 ```shell
-# See all available commands and their descriptions
+make console TTY=/dev/ttyACM0
+```
+
+> [!TIP]
+> On Linux, access to `/dev/ttyACM0` needs membership in the `dialout` group:
+> ```shell
+> sudo usermod -aG dialout $USER
+> ```
+
+---
+
+### Documentation
+
+Check out the project [documentation](docs/README.md) for more information.
+
+To see all available commands in [Makefile](Makefile) and their descriptions, run:
+
+```shell
 make help
 ```
 
