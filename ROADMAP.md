@@ -19,61 +19,61 @@ This document outlines the architecture, completed milestones, and future goals 
 
 ### Phase 1: Host Runtime and Tooling
 
-- [x] Pinned toolchain: Zig 0.17.0 and MicroZig 0.17.20 integration
-- [x] Build infrastructure: Nix development shell with `zig-overlay`, pre-commit hooks, and CI
-- [x] WAMR embedding: C runtime compilation, header translation, and static library linkage
-- [x] VM abstraction: Zig wrapper for runtime lifecycle, module loading, and execution environments
-- [x] Host function registration: native callback export to WebAssembly modules
-- [x] Host CLI runner: command-line tool (`tinybird run`) with module loading and argument passing
-- [x] WebAssembly samples: minimal applications (`add.wasm` and `hello.wasm`)
-- [x] Packaging support: self-contained Zig package declaration in `build.zig.zon`
+- [x] Integrate Zig 0.17.0 with MicroZig 0.17.20 across all build configurations.
+- [x] Set up build infrastructure using a Nix development shell with `zig-overlay`, pre-commit hooks, and GitHub Actions CI.
+- [x] Embed the WAMR C runtime as a static library with translated C header bindings.
+- [x] Provide a Zig runtime abstraction layer for module loading, instantiation, and execution environments.
+- [x] Implement host function registration to export native callbacks to WebAssembly modules.
+- [x] Build the `tinybird` host CLI runner to load modules and invoke exported functions with arguments.
+- [x] Provide sample WebAssembly applications, including `add.wasm` and `hello.wasm`.
+- [x] Include external runtime sources in `build.zig.zon` so Tinybird can be consumed as a standalone Zig package.
 
 ### Phase 2: Hardware API and Abstraction
 
-- [ ] Core API specification: standardized imports under the `"tinybird"` module namespace
-- [ ] GPIO operations: `gpio_configure`, `gpio_write`, and `gpio_read` functions
-- [ ] Time and scheduling: `uptime_ms` and `sleep_ms` functions
-- [ ] Diagnostic logging: `log_write` string and integer logging functions
-- [ ] Hardware capability queries: runtime discovery of available peripherals and pin counts
-- [ ] Error conventions: standard integer return codes and validation across host functions
-- [ ] Host simulation layer: mock GPIO and timing drivers for Linux development and testing
+- [ ] Specify the portable hardware API exposed to WebAssembly applications under the `"tinybird"` module namespace.
+- [ ] Implement GPIO operations to configure pin directions, write digital outputs, and read pin inputs.
+- [ ] Provide timing primitives for reading system uptime and putting the execution environment to sleep.
+- [ ] Implement diagnostic logging functions for printing numeric and string messages from WebAssembly code.
+- [ ] Define hardware capability discovery so applications can query available pins and peripherals at runtime.
+- [ ] Establish standard integer error codes and input validation across all host functions.
+- [ ] Create a host-side simulation layer that mocks GPIO state and timing for Linux development.
 
 ### Phase 3: Microcontroller Execution (RP2350)
 
-- [ ] Bare-metal WAMR port: interpreter integration with RP2350 and MicroZig HAL
-- [ ] Memory pool management: fixed-budget memory allocation from SRAM without general dynamic allocation
-- [ ] Memory footprint profiling: tracking flash consumption, runtime overhead, and linear memory
-- [ ] RP2350 platform drivers: hardware GPIO and timer drivers backing the Tinybird API
-- [ ] Embedded module execution: running bundled `.wasm` applications controlling physical hardware
-- [ ] Host and device parity: identical application behavior on Linux simulation and real hardware
+- [ ] Port the WAMR interpreter to bare-metal RP2350 using the MicroZig HAL.
+- [ ] Implement a fixed-budget memory pool in SRAM to avoid unconstrained dynamic allocation.
+- [ ] Profile memory usage by tracking flash consumption, runtime overhead, and linear memory footprint.
+- [ ] Build RP2350 platform drivers that connect physical GPIO and hardware timers to the Tinybird API.
+- [ ] Bundle and execute a WebAssembly application in firmware that drives the onboard LED on a Pico 2.
+- [ ] Verify identical application behavior between host simulation and physical hardware.
 
 ### Phase 4: Portability Verification (ESP32-C3)
 
-- [ ] RISC-V architecture support: platform abstraction layer for ESP32-C3
-- [ ] Platform drivers: ESP-IDF or bare-metal driver implementations
-- [ ] Binary compatibility verification: execution of unmodified `.wasm` binaries across Linux, Pico 2, and ESP32-C3
+- [ ] Implement the platform abstraction layer for ESP32-C3 on the RISC-V architecture.
+- [ ] Provide platform drivers backed by ESP-IDF or bare-metal peripheral registers.
+- [ ] Run identical, unmodified `.wasm` binaries across Linux, the Pico 2, and the ESP32-C3.
 
 ### Phase 5: Dynamic Application Management
 
-- [ ] Serial interactive shell: command interpreter with `help`, `info`, `apps`, `install`, `run`, and `remove`
-- [ ] Storage abstraction: partitioned flash storage for persistent application storage
-- [ ] Application upload protocol: transferring compiled `.wasm` binaries over USB serial
-- [ ] Flash safety mechanisms: write boundary verification and execution protection during flash updates
-- [ ] Application lifecycle states: installation, verification, startup, and termination
+- [ ] Develop an interactive serial shell supporting commands like `help`, `info`, `apps`, `install`, `run`, and `remove`.
+- [ ] Implement a storage abstraction that partitions flash memory for persistent application storage.
+- [ ] Create a transfer protocol to upload compiled WebAssembly binaries over USB serial.
+- [ ] Add safety checks for flash writes to protect against out-of-bounds writes and execution collisions.
+- [ ] Manage application lifecycles from installation and verification to execution and removal.
 
 ### Phase 6: Isolation and Scheduling
 
-- [ ] Memory limits: per-application heap and linear memory quotas
-- [ ] Peripheral permissions: capability-based hardware resource access control
-- [ ] Execution budgets: execution timeouts and watchdog timer integration
-- [ ] Non-blocking execution: cooperative yielding and interruption of misbehaving modules
-- [ ] Multi-tenant execution: running and scheduling multiple applications concurrently
+- [ ] Enforce per-application memory quotas on heap and linear memory.
+- [ ] Implement capability-based access control to restrict which hardware pins each application can access.
+- [ ] Set execution time budgets backed by hardware watchdog timers.
+- [ ] Support cooperative yielding and interruption to stop misbehaving modules without rebooting.
+- [ ] Enable multi-tenant scheduling so multiple applications can run concurrently.
 
 ### Development, Testing, and Quality
 
-- [x] Unit tests for hardware-free core logic on host
-- [x] Host tests for WAMR runtime lifecycle and module instantiation
-- [x] Coverage reporting and pre-commit hook automation
-- [ ] Automated integration tests for simulated hardware interactions
-- [ ] Real-hardware test runner for physical microcontroller verification
-- [ ] Benchmarks for Wasm execution overhead and memory consumption
+- [x] Write host-side unit tests for hardware-free core logic.
+- [x] Add host tests that exercise the WAMR runtime lifecycle and module instantiation.
+- [x] Configure automated code coverage reporting and pre-commit hook checks.
+- [ ] Implement automated integration tests for simulated hardware interactions.
+- [ ] Set up an automated test runner for verification on physical microcontroller boards.
+- [ ] Create benchmarks to measure execution overhead and memory footprint across targets.
