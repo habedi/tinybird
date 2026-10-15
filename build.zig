@@ -298,6 +298,23 @@ pub fn build(b: *std.Build) void {
     });
     b.installArtifact(nuttx_runner);
 
+    const nuttx_tests_mod = b.createModule(.{
+        .target = host_target,
+        .optimize = optimize,
+        .link_libc = true,
+    });
+    nuttx_tests_mod.addCSourceFile(.{
+        .file = b.path("tests/nuttx_runner.c"),
+        .flags = &.{ "-std=gnu99", "-Wall", "-Wextra" },
+    });
+    nuttx_tests_mod.addIncludePath(b.path("external/wamr/core/iwasm/include"));
+    nuttx_tests_mod.linkLibrary(wamr_lib);
+    const nuttx_tests = b.addExecutable(.{
+        .name = "test-nuttx-runner",
+        .root_module = nuttx_tests_mod,
+    });
+    test_step.dependOn(&b.addRunArtifact(nuttx_tests).step);
+
     const nuttx_hello_test = b.addRunArtifact(nuttx_runner);
     nuttx_hello_test.addArtifactArg(hello_wasm);
     nuttx_hello_test.expectStdOutEqual("42\n");

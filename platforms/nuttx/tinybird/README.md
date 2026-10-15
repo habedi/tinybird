@@ -13,7 +13,7 @@ The Tinybird runner solves this issue by exposing:
 
 - Diagnostic logging: `log(value: i32)` and `log_str(offset: i32, len: i32)`.
 - Timing functions: `uptime_ms()` and `delay_ms(ms: u32)`.
-- Peripheral control: `gpio_write(pin: u32, value: u32)` and `gpio_read(pin: u32)`.
+- Peripheral API placeholders: `gpio_write(pin: u32, value: u32)` and `gpio_read(pin: u32)` return `-ENOSYS` because hardware access is not implemented.
 
 ### Installation
 

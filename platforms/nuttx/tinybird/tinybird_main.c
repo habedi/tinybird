@@ -22,6 +22,7 @@
  * Included Files
  ****************************************************************************/
 
+#include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -92,8 +93,17 @@ static uint32_t tinybird_native_uptime_ms(wasm_exec_env_t exec_env)
 
 static void tinybird_native_delay_ms(wasm_exec_env_t exec_env, uint32_t ms)
 {
-    (void)exec_env;
-    usleep((useconds_t)ms * 1000);
+    struct timespec remaining = {
+        .tv_sec = ms / 1000,
+        .tv_nsec = (ms % 1000) * 1000000L,
+    };
+    while (nanosleep(&remaining, &remaining) != 0) {
+        if (errno != EINTR) {
+            wasm_runtime_set_exception(wasm_runtime_get_module_inst(exec_env),
+                                       "delay_ms failed");
+            return;
+        }
+    }
 }
 
 static int32_t tinybird_native_gpio_write(wasm_exec_env_t exec_env, uint32_t pin, uint32_t value)
@@ -101,14 +111,15 @@ static int32_t tinybird_native_gpio_write(wasm_exec_env_t exec_env, uint32_t pin
     (void)exec_env;
     (void)pin;
     (void)value;
-    return 0;
+    // shortcut: GPIO is unavailable, add board bindings before enabling hardware access.
+    return -ENOSYS;
 }
 
 static int32_t tinybird_native_gpio_read(wasm_exec_env_t exec_env, uint32_t pin)
 {
     (void)exec_env;
     (void)pin;
-    return 0;
+    return -ENOSYS;
 }
 
 /****************************************************************************
@@ -179,7 +190,7 @@ static uint8_t *read_file_to_buffer(const char *filename, uint32_t *out_size)
     }
 
     long file_size = ftell(file);
-    if (file_size <= 0) {
+    if (file_size <= 0 || (uintmax_t)file_size > UINT32_MAX) {
         printf("Error: file '%s' is empty or invalid size\n", filename);
         fclose(file);
         return NULL;
