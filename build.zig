@@ -100,6 +100,11 @@ fn buildWamr(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.buil
 pub fn build(b: *std.Build) void {
     const host_target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+    const fw_optimize = b.option(
+        std.builtin.Optimize,
+        "firmware-optimize",
+        "Optimization mode for firmware targets (defaults to small)",
+    ) orelse .small;
 
     // register the flag so `-Denable-coverage=true` is valid
     _ = b.option(bool, "enable-coverage", "Enable coverage instrumentation") orelse false;
@@ -207,7 +212,7 @@ pub fn build(b: *std.Build) void {
         .root_module = b.createModule(.{
             .root_source_file = b.path("examples/add/main.zig"),
             .target = wasm_target,
-            .optimize = .ReleaseSmall,
+            .optimize = .small,
         }),
     });
     add_wasm.entry = .disabled;
@@ -219,7 +224,7 @@ pub fn build(b: *std.Build) void {
         .root_module = b.createModule(.{
             .root_source_file = b.path("examples/hello/main.zig"),
             .target = wasm_target,
-            .optimize = .ReleaseSmall,
+            .optimize = .small,
         }),
     });
     hello_wasm.entry = .disabled;
@@ -238,11 +243,12 @@ pub fn build(b: *std.Build) void {
 
     const fw_core = b.createModule(.{
         .root_source_file = b.path("src/core/core.zig"),
+        .optimize = fw_optimize,
     });
     const firmware = mb.add_firmware(.{
-        .name = "blinky",
+        .name = "tinybird",
         .target = mb.ports.rp2xxx.boards.raspberrypi.pico2_arm,
-        .optimize = optimize,
+        .optimize = fw_optimize,
         .root_source_file = b.path("src/firmware/main.zig"),
         .imports = &.{.{ .name = "core", .module = fw_core }},
     });

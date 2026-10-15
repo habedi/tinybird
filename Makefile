@@ -1,7 +1,7 @@
 ################################################################################
 # Configuration and Variables
 ################################################################################
-ZIG    ?= $(shell echo ~/.local/share/zig/0.17.0/zig || which zig)
+ZIG    ?= $(shell test -f ~/.local/share/zig/0.17.0/zig && echo ~/.local/share/zig/0.17.0/zig || which zig)
 ZIG_VERSION   := $(shell $(ZIG) version)
 BUILD_TYPE    ?= Debug
 BUILD_OPTS      = -Doptimize=$(BUILD_TYPE)
@@ -13,8 +13,8 @@ CACHE_DIR     := .zig-cache
 DOC_SRC       := src/core/core.zig
 DOC_OUT       := docs/api/
 COVERAGE_DIR  := coverage
-FIRMWARE_NAME := blinky
-FIRMWARE_UF2  := $(BUILD_DIR)/firmware/$(FIRMWARE_NAME).uf2
+FIRMWARE_NAME ?= tinybird
+FIRMWARE_UF2  ?= $(BUILD_DIR)/firmware/$(FIRMWARE_NAME).uf2
 RELEASE_MODE := ReleaseSmall
 
 SHELL         := /usr/bin/env bash
@@ -24,7 +24,7 @@ SHELL         := /usr/bin/env bash
 # Targets
 ################################################################################
 
-.PHONY: all shell install build rebuild flash test cov lint format docs clean install-deps release help coverage setup-hooks test-hooks
+.PHONY: all shell install build rebuild flash test cov lint format docs clean install-deps release help setup-hooks test-hooks
 .DEFAULT_GOAL := help
 
 help: ## Show the help messages for all targets
@@ -38,13 +38,13 @@ install: ## Install the uv-managed Python tools (pre-commit)
 
 all: build test lint docs  ## build, test, lint, and doc
 
-build: ## Build the firmware (Mode=$(BUILD_TYPE))
-	@echo "Building the firmware in $(BUILD_TYPE) mode with $(JOBS) concurrent jobs..."
+build: ## Build the host CLI, Wasm apps, and firmware (Mode=$(BUILD_TYPE))
+	@echo "Building in $(BUILD_TYPE) mode with $(JOBS) concurrent jobs..."
 	$(ZIG) build $(BUILD_OPTS) -j$(JOBS)
 
 rebuild: clean build  ## clean and build
 
-flash: build  ## Flash the firmware to the board over USB with picotool
+flash: build  ## Flash the firmware to the board over USB (default: FIRMWARE_NAME=tinybird)
 	@echo "Flashing $(FIRMWARE_UF2)..."
 	picotool load -fx $(FIRMWARE_UF2)
 
@@ -52,8 +52,8 @@ test: ## Run the host-side tests and generate coverage data
 	@echo "Running tests with coverage enabled..."
 	$(ZIG) build test $(BUILD_OPTS) -Denable-coverage=true -j$(JOBS)
 
-release: ## Build the firmware in Release mode
-	@echo "Building the firmware in Release mode..."
+release: ## Build the host CLI, Wasm apps, and firmware in Release mode
+	@echo "Building in Release mode..."
 	@$(MAKE) BUILD_TYPE=$(RELEASE_MODE) build
 
 clean: ## Remove docs, build artifacts, and cache directories
@@ -89,12 +89,6 @@ install-deps: ## Install system dependencies (for Debian-based systems)
 	sudo apt-get update
 	sudo apt-get install -y make llvm snapd esptool
 	sudo snap install zig  --beta --classic # Use `--edge --classic` to install the latest version
-
-coverage: ## Generate code coverage report
-	@echo "Building tests with coverage instrumentation..."
-	@$(ZIG) build test -Denable-coverage=true
-	@echo "Generating coverage report..."
-	@kcov --include-pattern=src --verify coverage-out zig-out/bin/test-root
 
 setup-hooks: ## Install Git hooks (pre-commit and pre-push)
 	@echo "Installing Git hooks..."

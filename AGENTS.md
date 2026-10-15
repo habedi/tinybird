@@ -60,7 +60,7 @@ Priorities, in order:
 All commands run inside the Nix dev shell:
 
 1. `make test` runs the host-side tests; no board is needed.
-2. `make build` builds the firmware and installs `zig-out/firmware/blinky.uf2`.
+2. `make build` builds the firmware and installs `zig-out/firmware/tinybird.uf2`.
 3. `make flash` loads the UF2 onto the Pico 2 over USB with picotool. Copying the UF2 to the board in BOOTSEL mode also works.
 
 Serial access needs membership in the `dialout` group on most Linux distributions (some use `uucp` instead).

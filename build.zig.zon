@@ -1,6 +1,6 @@
 .{
     .name = .tinybird,
-    .version = "0.1.0",
+    .version = "0.1.0-alpha.1",
     .fingerprint = 0x14d5d4b3f441255f,
     .minimum_zig_version = "0.17.0",
     .dependencies = .{
@@ -15,6 +15,7 @@
         "src",
         "tests",
         "examples",
+        "external",
         "LICENSE",
         "README.md",
     },

@@ -25,13 +25,13 @@ permissions:
   contents: read
 
 jobs:
-  # Repository checks: the Git hooks and the Nix flake. The hooks run the
-  # format, lint, and test targets, so they need Zig too.
   checks:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install Zig 0.17.0
         run: |
@@ -53,13 +53,13 @@ jobs:
       - name: Evaluate the Nix flake
         run: nix flake check --no-build --all-systems
 
-  # Host-side tests plus a firmware build, so the template is proven to
-  # produce a UF2 on every change. Nothing is flashed in CI.
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install Zig 0.17.0
         run: |

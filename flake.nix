@@ -12,7 +12,9 @@
   outputs = { self, nixpkgs, zig-overlay }:
     let
       # Development happens on a Linux machine the board plugs into, on either amd64 or arm64.
-      supportedSystems = [ "x86_64-linux" "aarch64-linux" ];
+      supportedSystems = [ "x86_64-linux"
+                           "aarch64-linux"
+                           "aarch64-darwin"];
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
     in
     {

@@ -1,4 +1,4 @@
-//! Blinky firmware for the Raspberry Pi Pico 2, built with MicroZig.
+//! Tinybird firmware for the Raspberry Pi Pico 2, built with MicroZig.
 //! The blink pattern comes from the `core` module, which is the part of the
 //! project that also runs and is tested on the host.
 
