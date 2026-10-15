@@ -35,12 +35,12 @@ See [ROADMAP.md](ROADMAP.md) for the list of implemented and planned features.
 
 > [!IMPORTANT]
 > The instructions below are for Linux and macOS.
-> It's recommended to use Windows Subsystem for Linux (WSL) on Windows.
-> Additionally, you need Nix installed.
-> Currently, only the Raspberry Pi Pico 2 board is supported.
+> Use Windows Subsystem for Linux (WSL) on Windows.
+> A working Nix installation with flakes enabled is needed.
+> Currently, the primary microcontroller target is the Raspberry Pi Pico 2.
 
 <div align="center">
-  <img alt="NuttShell" src="docs/assets/images/pico/pico2wh.png" width="50%">
+  <img alt="Raspberry Pi Pico 2" src="docs/assets/images/pico/pico2wh.png" width="50%">
 </div>
 
 Clone the repository with submodules:
@@ -53,14 +53,14 @@ cd tinybird
 Enter the development environment and build:
 
 ```shell
-# Enter the Nix dev shell and install the Python tools
+# Enter the Nix dev shell and install Python tools
 make shell
 make install
 
-# Run the host-side tests (no board needed)
+# Run host-side unit tests (no board needed)
 make test
 
-# Build the CLI runner, sample Wasm apps, and firmware
+# Build the host CLI, sample Wasm applications, and MCU firmware
 make build
 ```
 
@@ -74,15 +74,49 @@ Run a sample WebAssembly application on the host:
 ./zig-out/bin/tinybird run zig-out/examples/add.wasm add 10 20
 ```
 
-Flash the firmware to a connected Raspberry Pi Pico 2:
+#### Flashing Firmware to the Pico 2
+
+1. Enter BOOTSEL mode by holding down the white `BOOTSEL` button on the Pico 2 while plugging the USB cable into your development machine, then release it.
+2. Flash the board:
 
 ```shell
-# Flash the MCU over USB
+# Option A: Automatic flash over USB using picotool
 make flash
+
+# Option B: Flash a specific UF2 file path
+make flash FIRMWARE_UF2=zig-out/firmware/tinybird.uf2
 ```
 
+Alternatively, copy the UF2 file directly to the mounted mass-storage volume:
+
+```shell
+# On Linux
+cp zig-out/firmware/tinybird.uf2 /media/$USER/RP2350/
+
+# On macOS
+cp zig-out/firmware/tinybird.uf2 /Volumes/RP2350/
+```
+
+The board unmounts and reboots automatically when writing finishes.
+
 > [!NOTE]
-> You need to put the board into bootloader mode by pressing the BOOTSEL button while plugging it in.
+> On the plain Pico 2, the onboard LED on GPIO 25 will blink.
+> On the Pico 2 W, the onboard LED is wired through the wireless chip, so wire an external LED to GPIO 25 and GND to observe blinking.
+
+#### Connecting to the Serial Console
+
+To monitor serial output from the board over USB CDC:
+
+```shell
+# Connect to the serial console at 115200 baud
+picocom -b 115200 /dev/ttyACM0
+```
+
+> [!TIP]
+> On Linux, access to `/dev/ttyACM0` requires membership in the `dialout` group (or `uucp` on Arch Linux):
+> ```shell
+> sudo usermod -aG dialout $USER
+> ```
 
 ```shell
 # See all available commands and their descriptions
