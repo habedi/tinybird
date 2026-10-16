@@ -279,6 +279,55 @@ pub fn build(b: *std.Build) void {
     missing_arg_test.expectStdErrEqual("Error: expected 2 arguments, received 1\n");
     test_step.dependOn(&missing_arg_test.step);
 
+    // NuttX runner executable (compiled for host/simulation testing)
+    const nuttx_mod = b.createModule(.{
+        .target = host_target,
+        .optimize = optimize,
+        .link_libc = true,
+    });
+    nuttx_mod.addCSourceFile(.{
+        .file = b.path("platforms/nuttx/tinybird/tinybird_main.c"),
+        .flags = &.{ "-std=gnu99", "-Wall", "-Wextra" },
+    });
+    nuttx_mod.addIncludePath(b.path("external/wamr/core/iwasm/include"));
+    nuttx_mod.linkLibrary(wamr_lib);
+
+    const nuttx_runner = b.addExecutable(.{
+        .name = "tinybird-nuttx",
+        .root_module = nuttx_mod,
+    });
+    b.installArtifact(nuttx_runner);
+
+    const nuttx_tests_mod = b.createModule(.{
+        .target = host_target,
+        .optimize = optimize,
+        .link_libc = true,
+    });
+    nuttx_tests_mod.addCSourceFile(.{
+        .file = b.path("tests/nuttx_runner.c"),
+        .flags = &.{ "-std=gnu99", "-Wall", "-Wextra" },
+    });
+    nuttx_tests_mod.addIncludePath(b.path("external/wamr/core/iwasm/include"));
+    nuttx_tests_mod.linkLibrary(wamr_lib);
+    const nuttx_tests = b.addExecutable(.{
+        .name = "test-nuttx-runner",
+        .root_module = nuttx_tests_mod,
+    });
+    test_step.dependOn(&b.addRunArtifact(nuttx_tests).step);
+
+    const nuttx_hello_test = b.addRunArtifact(nuttx_runner);
+    nuttx_hello_test.addArtifactArg(hello_wasm);
+    nuttx_hello_test.expectStdOutEqual("42\n");
+    test_step.dependOn(&nuttx_hello_test.step);
+
+    const nuttx_add_test = b.addRunArtifact(nuttx_runner);
+    nuttx_add_test.addArg("-f");
+    nuttx_add_test.addArg("add");
+    nuttx_add_test.addArtifactArg(add_wasm);
+    nuttx_add_test.addArgs(&.{ "15", "27" });
+    nuttx_add_test.expectStdOutEqual("0x2a:i32\n");
+    test_step.dependOn(&nuttx_add_test.step);
+
     // The firmware. MicroZig provides the startup code, the linker script,
     // and the HAL; the core module is imported into it unchanged.
     const mz_dep = b.dependency("microzig", .{});
