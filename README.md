@@ -9,7 +9,7 @@
 [![Tests](https://img.shields.io/github/actions/workflow/status/habedi/tinybird/tests.yml?label=tests&style=flat&labelColor=282c34&logo=github)](https://github.com/habedi/tinybird/actions/workflows/tests.yml)
 [![Examples](https://img.shields.io/badge/examples-view-507ec6?label=examples&style=flat&labelColor=282c34&logo=github)](examples)
 [![Docs](https://img.shields.io/badge/docs-read-507ec6?label=docs&style=flat&labelColor=282c34&logo=readthedocs)](docs)
-[![Zig Version](https://img.shields.io/badge/Zig-0.17.1-F7A41D?logo=zig&labelColor=282c34)](https://ziglang.org/download/)
+[![Zig Version](https://img.shields.io/badge/Zig-0.17-F7A41D?logo=zig&labelColor=282c34)](https://ziglang.org/download/)
 [![MicroZig Version](https://img.shields.io/badge/MicroZig-0.17.20-F7A41D?logo=zig&labelColor=282c34)](https://microzig.tech/)
 [![License](https://img.shields.io/badge/license-Apache_2.0-007ec6?label=license&style=flat&labelColor=282c34&logo=open-source-initiative)](LICENSE)
 

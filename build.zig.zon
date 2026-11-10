@@ -16,6 +16,7 @@
         "tests",
         "examples",
         "external",
+        "platforms",
         "LICENSE",
         "README.md",
     },
