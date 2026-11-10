@@ -4,14 +4,16 @@ This file guides coding agents that work on this repository.
 
 ## Mission
 
-This repository is a template for microcontroller projects written in Zig.
-It builds firmware with MicroZig and targets the Raspberry Pi Pico 2 out of the box.
+Tinybird is a Wasm-based application platform for microcontrollers, written in Zig and C.
+It provides Linux and NuttX runners backed by WAMR, and builds Pico 2 firmware with MicroZig.
+The MicroZig firmware currently provides LED blinking and USB CDC status output; Wasm execution in that firmware is planned.
+
 Priorities, in order:
 
-1. A working template: the host tests pass, the firmware builds to a UF2, and the blinky runs on the real board.
+1. A working platform: the host tests pass, the runners execute sample Wasm applications, and the firmware builds to a UF2 and runs on the real board.
 2. Reproducible setup: the pinned Zig and MicroZig versions, the Nix dev shell, and the uv-managed Python tools define the whole environment, so a
    fresh clone builds without surprises.
-3. A clean split between `src/core/` and `src/firmware/`, so projects made from this template keep their logic testable on the host.
+3. A clean split between hardware-free logic, runtime bindings, and platform code, so application logic stays testable on the host.
 
 ## Hardware
 
@@ -21,27 +23,28 @@ Priorities, in order:
 
 ## Version Pins
 
-- Zig is pinned to 0.17.0, supported by MicroZig 0.17.20.
+- The Nix dev shell pins Zig to 0.17.0. CI installs Zig 0.17.1, and `build.zig.zon` requires at least 0.17.0.
 - MicroZig is pinned to the 0.17.20 release in `build.zig.zon`.
-- Upgrading both together touches four places: the dependency URL and hash in `build.zig.zon`, the Zig paths in the `Makefile`, the Zig version in
-  the workflows under `.github/workflows/`, and the version badges in `README.md`.
+- When upgrading Zig or MicroZig, review the compiler selection in `flake.nix`, the minimum Zig version and dependency URL and hash in
+  `build.zig.zon`, the Zig versions in `.github/workflows/`, and the version badges in `README.md`.
+  Update `flake.lock` when the selected compiler requires a newer overlay. The `Makefile` uses Zig from the environment.
 
 ## Core Rules
 
 - Use English for code, comments, docs, and tests.
 - Prefer small, focused changes over large refactoring.
 - Add comments only when they explain something the code does not show.
-- This is a template, so keep it minimal: no features, abstractions, or dependencies beyond what shows the pattern. A new `build.zig.zon` dependency
-  needs prior discussion.
+- Keep changes minimal and within the requested scope. A new `build.zig.zon` dependency needs prior discussion.
 - Do not flash a board or open its serial port without being asked. The user may be using the board.
   A request to flash also authorizes the software reset into BOOTSEL mode needed for that flash.
 
 ## External Dependencies
 
 - MicroZig comes through `build.zig.zon` and is the only Zig dependency.
+- WAMR is a C dependency pinned by the `external/wamr` Git submodule. Clone with `--recurse-submodules` or run `git submodule update --init --recursive`.
 - Python tools (pre-commit) are managed by uv through `pyproject.toml`. Run them as `uv run pre-commit`. Do not install Python tools with pip into
   the system interpreter.
-- Everything else (the Zig compiler, picotool, and picocom) comes from the Nix dev shell in `flake.nix`. Enter it with `nix develop` or
+- The Zig compiler, picotool, and picocom come from the Nix dev shell in `flake.nix`. Enter it with `nix develop` or
   `make shell`. On a Debian-based system without Nix, `make install-deps` installs a partial set with apt.
 
 ## Repository Layout
@@ -49,7 +52,12 @@ Priorities, in order:
 - `src/core/core.zig`: the hardware-free logic. It must stay freestanding-safe: no allocation, no I/O, and no OS calls, so the same code compiles
   for the host tests and for the firmware.
 - `src/firmware/main.zig`: the firmware entry point. It uses the MicroZig HAL, imports `core`, and provides the LED blink pattern and USB CDC status output.
+- `src/main.zig`: the Linux command-line Wasm runner.
+- `src/vm/wamr.zig`: the WAMR bindings and runtime lifecycle tests.
+- `platforms/nuttx/tinybird/`: the NuttX runner and its build integration.
+- `examples/`: sample Wasm applications.
 - `tests/main.zig`: host-side tests that exercise `core` from the outside.
+- `tests/nuttx_runner.c`: host-side regression tests for the NuttX runner. `build.zig` also defines runner integration tests.
 - `build.zig`: the host test steps first, then the MicroZig firmware. Keep that order, so the host tests still run when a port dependency is
   missing.
 - `docs/`: documentation and assets; `docs/api/` is generated and never committed.
@@ -61,7 +69,7 @@ Priorities, in order:
 All commands run inside the Nix dev shell:
 
 1. `make test` runs the host-side tests; no board is needed.
-2. `make build` builds the firmware and installs `zig-out/firmware/tinybird.uf2`.
+2. `make build` builds the Linux runners, sample Wasm applications, and firmware, including `zig-out/firmware/tinybird.uf2`.
 3. `make flash` loads the UF2 onto the Pico 2 over USB with picotool. Copying the UF2 to the board in BOOTSEL mode also works.
 4. `make console TTY=/dev/ttyACM0` opens the USB CDC console. The firmware sends `Tinybird running` once per second; it does not accept commands.
 
@@ -79,7 +87,7 @@ Linux may assign a different port, such as `/dev/ttyACM1`.
 ## Adding a Board
 
 - Enable the chip family's port in the `MicroBuild` selection at the top of `build.zig`, and pick a target from `mb.ports`.
-- Add a second `add_firmware` call rather than editing the existing one, so the template keeps a known-good reference.
+- Add a second `add_firmware` call rather than editing the existing one, so the project keeps a known-good reference.
 - Keep board-specific code inside `src/firmware/`; nothing about a board may leak into `src/core/`.
 
 ## Testing
@@ -129,4 +137,4 @@ Before committing a change:
 ## Commit Hygiene
 
 - Keep commits scoped to one logical change.
-- A version bump of Zig or MicroZig is its own commit, touching all four places the Version Pins section lists.
+- A version bump of Zig or MicroZig is its own commit, with the relevant files from the Version Pins section updated together.

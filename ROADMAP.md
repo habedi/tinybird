@@ -19,7 +19,7 @@ This document outlines the architecture, completed milestones, and future goals 
 
 ### Phase 1: Host Runtime and Tooling
 
-- [x] Integrate Zig 0.17.0 with MicroZig 0.17.20 across all build configurations.
+- [x] MicroZig 0.17.20 integration with Zig 0.17.0 in Nix and Zig 0.17.1 in CI.
 - [x] Set up build infrastructure using a Nix development shell with `zig-overlay`, pre-commit hooks, and GitHub Actions CI.
 - [x] Embed the WAMR C runtime as a static library with translated C header bindings.
 - [x] Provide a Zig runtime abstraction layer for module loading, instantiation, and execution environments.
@@ -32,8 +32,10 @@ This document outlines the architecture, completed milestones, and future goals 
 
 - [ ] Specify the portable hardware API exposed to WebAssembly applications under the `"tinybird"` module namespace.
 - [ ] Implement GPIO operations to configure pin directions, write digital outputs, and read pin inputs.
-- [ ] Provide timing primitives for reading system uptime and putting the execution environment to sleep.
-- [ ] Implement diagnostic logging functions for printing numeric and string messages from WebAssembly code.
+- [x] NuttX timing primitives for reading system uptime and sleeping.
+- [ ] Timing primitives in the Linux runner and bare-metal firmware.
+- [x] Numeric diagnostic logging in the Linux and NuttX runners, and string logging in the NuttX runner.
+- [ ] String logging in the Linux runner, and numeric and string logging in the bare-metal firmware.
 - [ ] Define hardware capability discovery so applications can query available pins and peripherals at runtime.
 - [ ] Establish standard integer error codes and input validation across all host functions.
 - [ ] Create a host-side simulation layer that mocks GPIO state and timing for Linux development.
