@@ -33,24 +33,31 @@ See [ROADMAP.md](ROADMAP.md) for the list of implemented and planned features.
 
 ### Quickstart
 
+To follow the steps below, you need to have Git and [Nix](https://nixos.org/download/) (with flakes enabled) installed on your machine.
+
 > [!IMPORTANT]
 > The instructions below are for Linux.
 > Use Windows Subsystem for Linux (WSL) on Windows.
 > A working Nix installation with flakes enabled is needed.
 > Currently, the primary microcontroller target is the Raspberry Pi Pico 2.
 
-Clone the repository with submodules:
+#### 1. Clone the repository
 
-```shell
+```bash
 git clone --recurse-submodules https://github.com/habedi/tinybird.git
 cd tinybird
 ```
 
-Enter the development environment and build:
+#### 2. Enter the development environment
 
-```shell
-# Enter the Nix dev shell and install Python tools
-make shell
+```bash
+nix develop
+```
+
+#### 3. Install development tools and dependencies
+
+```bash
+# Install Python tools
 make install
 
 # Run host-side unit tests (no board needed)
@@ -60,9 +67,9 @@ make test
 make build
 ```
 
-Run a sample WebAssembly application on the host:
+#### 4. Run a sample WebAssembly application
 
-```shell
+```bash
 # Run the hello world example
 ./zig-out/bin/tinybird run zig-out/examples/hello.wasm
 
@@ -70,12 +77,12 @@ Run a sample WebAssembly application on the host:
 ./zig-out/bin/tinybird run zig-out/examples/add.wasm add 10 20
 ```
 
-#### Flashing Firmware to the Pico 2
+#### 5. Flashing the firmware to the Raspberry Pi Pico 2
 
 1. Enter BOOTSEL mode by holding down the white `BOOTSEL` button on the Pico 2 while plugging the USB cable into your machine, then release it.
 2. Flash the board:
 
-```shell
+```bash
 # Option A: Automatic flash over USB using picotool
 make flash
 
@@ -87,17 +94,15 @@ make flash FIRMWARE_UF2=zig-out/firmware/tinybird.uf2
   <img alt="Raspberry Pi Pico 2" src="docs/assets/images/pico/pico2wh.png" width="50%">
 </div>
 
-#### Connecting to the Serial Console
+#### 6. Connecting to the serial console
 
-To monitor serial output from the board over USB CDC:
-
-```shell
+```bash
 make console TTY=/dev/ttyACM0
 ```
 
 > [!TIP]
 > On Linux, access to `/dev/ttyACM0` needs membership in the `dialout` group:
-> ```shell
+> ```bash
 > sudo usermod -aG dialout $USER
 > ```
 
@@ -109,7 +114,7 @@ Check out the project [documentation](docs/README.md) for more information.
 
 To see all available commands in [Makefile](Makefile) and their descriptions, run:
 
-```shell
+```bash
 make help
 ```
 

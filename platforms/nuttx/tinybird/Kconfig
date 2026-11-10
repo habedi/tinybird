@@ -1,0 +1,36 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config INTERPRETERS_TINYBIRD
+	tristate "Tinybird WebAssembly Runner"
+	default n
+	depends on INTERPRETERS_WAMR
+	---help---
+		Enable the Tinybird WebAssembly runner for executing .wasm modules
+		in the NuttShell with native Tinybird API support.
+
+if INTERPRETERS_TINYBIRD
+
+config INTERPRETERS_TINYBIRD_PRIORITY
+	int "Tinybird task priority"
+	default 100
+
+config INTERPRETERS_TINYBIRD_STACKSIZE
+	int "Tinybird runner task stack size"
+	default 8192
+
+config INTERPRETERS_TINYBIRD_APP_STACK_SIZE
+	int "WebAssembly application stack size"
+	default 16384
+	---help---
+		Stack size in bytes allocated for the WebAssembly execution environment.
+
+config INTERPRETERS_TINYBIRD_APP_HEAP_SIZE
+	int "WebAssembly application heap size"
+	default 16384
+	---help---
+		Heap size in bytes allocated for the WebAssembly module instance.
+
+endif

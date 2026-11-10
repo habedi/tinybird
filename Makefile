@@ -25,7 +25,7 @@ SHELL         := /usr/bin/env bash
 # Targets
 ################################################################################
 
-.PHONY: all shell install build rebuild flash console test lint format docs clean install-deps release help setup-hooks test-hooks
+.PHONY: all shell install build rebuild flash console examples test lint format docs clean install-deps release help setup-hooks test-hooks
 .DEFAULT_GOAL := help
 
 help: ## Show the help messages for all targets
@@ -52,6 +52,10 @@ flash: build  ## Flash the firmware to the board over USB (default: FIRMWARE_NAM
 console: ## Connect to the serial console over USB (default: TTY=/dev/ttyACM0 BAUD=115200)
 	@echo "Connecting to $(TTY) at $(BAUD) baud (exit with Ctrl-a Ctrl-x)..."
 	picocom -b $(BAUD) $(TTY)
+
+examples: ## Build sample WebAssembly applications
+	@echo "Building sample WebAssembly applications..."
+	$(ZIG) build examples -j$(JOBS)
 
 test: ## Run the host-side tests
 	@echo "Running host-side tests..."
