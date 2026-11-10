@@ -1,7 +1,7 @@
 ################################################################################
 # Configuration and Variables
 ################################################################################
-ZIG    ?= $(shell test -f ~/.local/share/zig/0.17.0/zig && echo ~/.local/share/zig/0.17.0/zig || which zig)
+ZIG    ?= $(shell test -f ~/.local/share/zig/0.17.1/zig && echo ~/.local/share/zig/0.17.0/zig || which zig)
 ZIG_VERSION   := $(shell $(ZIG) version)
 BUILD_TYPE    ?= Debug
 BUILD_OPTS      = -Doptimize=$(BUILD_TYPE)

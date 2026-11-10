@@ -25,18 +25,11 @@
         {
           default = pkgs.mkShell {
             packages = with pkgs; [
-              # Zig pinned to 0.17.0 (matching MicroZig 0.17.20)
               zig
-
-              # Build tools
               gnumake
-
-              # Flashing and the serial console
               picotool
               picocom
-
-              # uv manages the Python tools (pre-commit) through
-              # pyproject.toml.
+              python315
               uv
             ];
           };
