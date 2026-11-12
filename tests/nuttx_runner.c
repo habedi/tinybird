@@ -30,6 +30,25 @@ static int test_nanosleep(const struct timespec *request, struct timespec *remai
 
 int main(void)
 {
+    const char *options[] = { "--stack-size=", "--heap-size=" };
+    const char *invalid_sizes[] = {
+        "", "garbage", "12bytes", "-1", " 12", "4294967296",
+        "18446744073709551616",
+    };
+    for (size_t i = 0; i < sizeof(options) / sizeof(options[0]); i++) {
+        char option[80];
+        char *args[] = { "tinybird", option, "help" };
+        for (size_t j = 0; j < sizeof(invalid_sizes) / sizeof(invalid_sizes[0]); j++) {
+            snprintf(option, sizeof(option), "%s%s", options[i], invalid_sizes[j]);
+            assert(tinybird_runner_main(3, args) == 1);
+        }
+        const char *valid_sizes[] = { "0", "16384", "4294967295" };
+        for (size_t j = 0; j < sizeof(valid_sizes) / sizeof(valid_sizes[0]); j++) {
+            snprintf(option, sizeof(option), "%s%s", options[i], valid_sizes[j]);
+            assert(tinybird_runner_main(3, args) == 0);
+        }
+    }
+
     assert(tinybird_native_gpio_write(NULL, 25, 1) == -ENOSYS);
     assert(tinybird_native_gpio_read(NULL, 25) == -ENOSYS);
 

@@ -13,7 +13,8 @@
     let
       # Development happens on a Linux machine the board plugs into, on either amd64 or arm64.
       supportedSystems = [ "x86_64-linux"
-                           "aarch64-linux"];
+                           "aarch64-linux"
+                           "aarch64-darwin"];
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
     in
     {
@@ -25,18 +26,11 @@
         {
           default = pkgs.mkShell {
             packages = with pkgs; [
-              # Zig pinned to 0.17.0 (matching MicroZig 0.17.20)
               zig
-
-              # Build tools
               gnumake
-
-              # Flashing and the serial console
               picotool
               picocom
-
-              # uv manages the Python tools (pre-commit) through
-              # pyproject.toml.
+              python315
               uv
             ];
           };

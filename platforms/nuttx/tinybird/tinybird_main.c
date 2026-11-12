@@ -258,11 +258,23 @@ int main(int argc, char *argv[])
                 return 1;
             }
             func_name = argv[i++];
-        } else if (strncmp(argv[i], "--stack-size=", 13) == 0) {
-            stack_size = (uint32_t)strtoul(argv[i] + 13, NULL, 10);
-            i++;
-        } else if (strncmp(argv[i], "--heap-size=", 12) == 0) {
-            heap_size = (uint32_t)strtoul(argv[i] + 12, NULL, 10);
+        } else if (strncmp(argv[i], "--stack-size=", 13) == 0 ||
+                   strncmp(argv[i], "--heap-size=", 12) == 0) {
+            bool is_stack = strncmp(argv[i], "--stack-size=", 13) == 0;
+            const char *value = argv[i] + (is_stack ? 13 : 12);
+            char *end;
+            errno = 0;
+            unsigned long size = strtoul(value, &end, 10);
+            if (value[0] < '0' || value[0] > '9' || *end != '\0' ||
+                errno == ERANGE || size > UINT32_MAX) {
+                printf("Error: invalid memory size '%s'\n", argv[i]);
+                return 1;
+            }
+            if (is_stack) {
+                stack_size = (uint32_t)size;
+            } else {
+                heap_size = (uint32_t)size;
+            }
             i++;
         } else {
             printf("Error: unknown option '%s'\n\n", argv[i]);
